@@ -7,7 +7,7 @@ class RedisClient {
     this.client = redis.createClient(redisOptions);
     this.connected = false;
 
-    // Set up the 'ready' event to indicate successful connection
+    // Set up the 'ready' event to indicate a successful connection
     this.client.once('ready', () => {
       this.connected = true;
       console.log('Connected to Redis!');
@@ -24,6 +24,7 @@ class RedisClient {
 
   handleRedisError(error) {
     console.error(`Redis connection error: ${error}`);
+    // You can use this.connected or any other class properties/methods here if needed
   }
 
   isAlive() {
