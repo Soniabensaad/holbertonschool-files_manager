@@ -24,7 +24,6 @@ class RedisClient {
 
   handleRedisError(error) {
     console.error(`Redis connection error: ${error}`);
-    // You can use this.connected or any other class properties/methods here if needed
   }
 
   isAlive() {
@@ -83,7 +82,6 @@ class RedisClient {
 }
 
 const redisClient = new RedisClient({
-  // provide your Redis options here
   host: 'localhost',
   port: 6379,
 });
