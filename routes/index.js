@@ -11,7 +11,8 @@ const usersControllerInstance = new UsersController();
 // Define the status endpoint
 router.get('/status', appControllerInstance.getStatus);
 router.get('/stats', appControllerInstance.getStats);
-router.post('users', usersControllerInstance.postNew);
+
+router.post('/users', usersControllerInstance.postNew);
 
 // Add more endpoints as needed
 
