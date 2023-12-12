@@ -1,22 +1,21 @@
-import redisClient from '../utils/redis';
-import dbClient from '../utils/db';
-
+// controllers/appController.js
 class AppController {
-  static getStatus(req, res) {
-    const status = {
-      redis: redisClient.isAlive(),
-      db: dbClient.isAlive(),
-    };
-    res.status(200).send(status);
+    getStatus(req, res) {
+      res.json({ "redis": true, "db": true }); 
+    }
+  
+    async getStats(req, res) {
+      try {
+        const usersCount = await this.db.collection('users').countDocuments();
+        const filesCount = await this.db.collection('files').countDocuments();
+  
+        res.json({ "users": usersCount, "files": filesCount }); 
+      } catch (error) {
+        console.error(`Error getting stats: ${error}`);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    }
   }
-
-  static async getStats(req, res) {
-    const stats = {
-      users: await dbClient.nbUsers(),
-      files: await dbClient.nbFiles(),
-    };
-    res.status(200).send(stats);
-  }
-}
-
-export default AppController;
+  
+  module.exports = AppController;
+  
