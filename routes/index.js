@@ -1,19 +1,17 @@
 // routes/index.js
+import AppController from '../controllers/AppController';
+import UsersController from '../controllers/UsersController';
+
+
 const express = require('express');
-const router = express.Router();
-const AppController = require('../controllers/AppController'); 
-const UsersController = require('../controllers/UsersController')
 
-// Create an instance of AppController
-const appControllerInstance = new AppController();
-const usersControllerInstance = new UsersController();
+const router = (app) => {
+  const paths = express.Router();
+  app.use(express.json());
+  app.use('/', paths);
 
-// Define the status endpoint
-router.get('/status', appControllerInstance.getStatus);
-router.get('/stats', appControllerInstance.getStats);
-
-router.post('/users', usersControllerInstance.postNew);
-
-// Add more endpoints as needed
-
+  paths.get('/status', ((request, response) => AppController.getStatus(request, response)));
+  paths.get('/stats', ((request, response) => AppController.getStats(request, response)));
+  paths.post('/users', ((request, response) => UsersController.postNew(request, response)));
+}
 module.exports = router;
