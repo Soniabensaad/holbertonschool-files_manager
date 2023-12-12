@@ -1,15 +1,18 @@
 // routes/index.js
 const express = require('express');
-const router = express.Router();
 const AppController = require('../controllers/AppController'); 
 
-// Create an instance of AppController
-const appControllerInstance = new AppController();
+function controllerRouting(app) {
+    const router = express.Router();
+    app.use('/', router);
+  
+    router.get('/status', (req, res) => {
+      AppController.getStatus(req, res);
+    });
+  
+    router.get('/stats', (req, res) => {
+      AppController.getStats(req, res);
+    });
+}
 
-// Define the status endpoint
-router.get('/status', appControllerInstance.getStatus);
-router.get('/stats', appControllerInstance.getStats);
-
-// Add more endpoints as needed
-
-module.exports = router;
+export default controllerRouting;
