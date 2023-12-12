@@ -1,7 +1,7 @@
 // routes/index.js
 const express = require('express');
 const router = express.Router();
-const AppController = require('../controllers/appController');
+const AppController = require('../controllers/AppController'); 
 
 // Create an instance of AppController
 const appControllerInstance = new AppController();
