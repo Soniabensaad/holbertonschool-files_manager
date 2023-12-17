@@ -8,6 +8,7 @@ class UsersController {
 
   async postNew(req, res) {
     try {
+      // Extract user data from the request body
       const { email, password } = req.body;
 
       // Validate email and password presence
@@ -22,7 +23,7 @@ class UsersController {
       // Check if the email already exists in the database
       const existingUser = await this.dbClient.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ error: 'Email already exists' });
+        return res.status(400).json({ error: 'Already exist' });
       }
 
       // Hash the password using SHA1
