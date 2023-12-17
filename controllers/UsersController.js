@@ -1,4 +1,5 @@
-const sha1 = require('sha1');
+// controllers/UsersController.js
+import sha1 from 'sha1';
 
 class UsersController {
   constructor(dbClient) {
@@ -7,7 +8,6 @@ class UsersController {
 
   async postNew(req, res) {
     try {
-      // Extract user data from the request body
       const { email, password } = req.body;
 
       // Validate email and password presence
@@ -22,7 +22,7 @@ class UsersController {
       // Check if the email already exists in the database
       const existingUser = await this.dbClient.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ error: 'Already exist' });
+        return res.status(400).json({ error: 'Email already exists' });
       }
 
       // Hash the password using SHA1
@@ -51,4 +51,4 @@ class UsersController {
   }
 }
 
-module.exports = UsersController;
+export default UsersController;
