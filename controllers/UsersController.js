@@ -31,7 +31,7 @@ class UsersController {
 
       // Create a new user object
       const newUser = {
-        email: email,
+        email,
         password: hashedPassword,
       };
 
@@ -49,6 +49,9 @@ class UsersController {
       console.error(`Error adding new user: ${error}`);
       res.status(500).json({ error: 'Internal Server Error' });
     }
+
+    // Add a consistent return statement here
+    return null;
   }
 }
 
