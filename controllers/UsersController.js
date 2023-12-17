@@ -1,57 +1,38 @@
 // controllers/UsersController.js
+
 import sha1 from 'sha1';
+import DBClient from '../utils/db';
+import RedisClient from '../utils/redis';
+
+const { ObjectId } = require('mongodb');
+const Bull = require('bull');
 
 class UsersController {
-  constructor(dbClient) {
-    this.dbClient = dbClient;
-  }
+  static async postNew(request, response) {
+    const userQueue = new Bull('userQueue');
 
-  async postNew(req, res) {
     try {
-      // Extract user data from the request body
-      const { email, password } = req.body;
+      const userEmail = request.body.email;
+      if (!userEmail) return response.status(400).json({ error: 'Missing email' });
 
-      // Validate email and password presence
-      if (!email) {
-        return res.status(400).json({ error: 'Missing email' });
-      }
+      const userPassword = request.body.password;
+      if (!userPassword) return response.status(400).json({ error: 'Missing password' });
 
-      if (!password) {
-        return res.status(400).json({ error: 'Missing password' });
-      }
+      const oldUserEmail = await DBClient.db.collection('users').findOne({ email: userEmail });
+      if (oldUserEmail) return response.status(400).json({ error: 'Already exist' });
 
-      // Check if the email already exists in the database
-      const existingUser = await this.dbClient.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ error: 'Already exist' });
-      }
+      const shaUserPassword = sha1(userPassword);
+      const result = await DBClient.db.collection('users').insertOne({ email: userEmail, password: shaUserPassword });
 
-      // Hash the password using SHA1
-      const hashedPassword = sha1(password);
+      await userQueue.add({
+        userId: result.insertedId,
+      });
 
-      // Create a new user object
-      const newUser = {
-        email,
-        password: hashedPassword,
-      };
-
-      // Add the new user to the database
-      const result = await this.dbClient.addNewUser(newUser);
-
-      // Return the new user with only email and id
-      const responseData = {
-        id: result.insertedId,
-        email: newUser.email,
-      };
-
-      res.status(201).json(responseData);
+      return response.status(201).json({ id: result.insertedId, email: userEmail });
     } catch (error) {
       console.error(`Error adding new user: ${error}`);
-      res.status(500).json({ error: 'Internal Server Error' });
+      return response.status(500).json({ error: 'Internal Server Error' });
     }
-
-    // Add a consistent return statement here
-    return null;
   }
 }
 
