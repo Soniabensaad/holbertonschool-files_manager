@@ -1,45 +1,46 @@
 import sha1 from 'sha1';
-import { promisify } from 'util';
-import redis from 'redis';
 import DBClient from '../utils/db';
-import Bull from 'bull';
+import RedisClient from '../utils/redis';
+
+const { ObjectId } = require('mongodb');
+const Bull = require('bull');
 
 class UsersController {
   static async postNew(request, response) {
-    // ... (existing code for creating a new user)
+    const userQueue = new Bull('userQueue');
 
-    return response.status(201).json({ id: result.insertedId, email: userEmail });
+    const userEmail = request.body.email;
+    if (!userEmail) return response.status(400).send({ error: 'Missing email' });
+
+    const userPassword = request.body.password;
+    if (!userPassword) return response.status(400).send({ error: 'Missing password' });
+
+    const oldUserEmail = await DBClient.db.collection('users').findOne({ email: userEmail });
+    if (oldUserEmail) return response.status(400).send({ error: 'Already exist' });
+
+    const shaUserPassword = sha1(userPassword);
+    const result = await DBClient.db.collection('users').insertOne({ email: userEmail, password: shaUserPassword });
+
+    userQueue.add({
+      userId: result.insertedId,
+    });
+
+    return response.status(201).send({ id: result.insertedId, email: userEmail });
   }
 
   static async getMe(request, response) {
-    try {
-      const token = request.headers.authorization;
+    const token = request.header('X-Token') || null;
+    if (!token) return response.status(401).send({ error: 'Unauthorized' });
 
-      if (!token) {
-        return response.status(401).json({ error: 'Unauthorized' });
-      }
+    const redisToken = await RedisClient.get(`auth_${token}`);
+    if (!redisToken) return response.status(401).send({ error: 'Unauthorized' });
 
-      // Check if the token exists in Redis
-      const userId = await getAsync(`auth_${token}`);
+    const user = await DBClient.db.collection('users').findOne({ _id: ObjectId(redisToken) });
+    if (!user) return response.status(401).send({ error: 'Unauthorized' });
+    delete user.password;
 
-      if (!userId) {
-        return response.status(401).json({ error: 'Unauthorized' });
-      }
-
-      // Retrieve the user based on the user ID (replace with your actual logic)
-      const user = await DBClient.db.collection('users').findOne({ _id: ObjectId(userId) });
-
-      if (!user) {
-        return response.status(401).json({ error: 'Unauthorized' });
-      }
-
-      // Return the user object (email and id only)
-      return response.status(200).json({ id: user._id, email: user.email });
-    } catch (error) {
-      console.error('Error:', error.message);
-      return response.status(500).json({ error: 'Internal Server Error' });
-    }
+    return response.status(200).send({ id: user._id, email: user.email });
   }
 }
 
-export default UsersController;
+module.exports = UsersController;
