@@ -1,89 +1,34 @@
 const redis = require('redis');
-const util = require('util');
+const { promisify } = require('util');
 
 class RedisClient {
-  constructor(redisOptions) {
-    // Create a Redis client
-    this.client = redis.createClient(redisOptions);
-    this.connected = false;
+  constructor() {
+    this.client = redis.createClient();
+    this.getAsync = promisify(this.client.get).bind(this.client);
 
-    // Set up the 'ready' event to indicate a successful connection
-    this.client.once('ready', () => {
-      this.connected = true;
-      console.log('Connected to Redis!');
+    this.client.on('error', (error) => {
+      console.log(`Redis client not connected to the server: ${error}`);
     });
-
-    // Set up error handling
-    this.client.on('error', this.handleRedisError.bind(this));
-
-    // Promisify Redis methods
-    this.getAsync = util.promisify(this.client.get).bind(this.client);
-    this.setAsync = util.promisify(this.client.setex).bind(this.client);
-    this.delAsync = util.promisify(this.client.del).bind(this.client);
-  }
-
-  handleRedisError(error) {
-    console.error(`Redis connection error: ${error}`);
   }
 
   isAlive() {
-    return this.connected;
+    return this.client.connected;
   }
 
   async get(key) {
-    if (!this.connected) {
-      throw new Error('Not connected to Redis');
-    }
-
-    try {
-      const value = await this.getAsync(key);
-      console.log(`Value for key "${key}": ${value}`);
-      return value;
-    } catch (error) {
-      console.error(`Error getting value for key "${key}": ${error}`);
-      throw error;
-    }
+    const value = await this.getAsync(key);
+    return value;
   }
 
-  async set(key, value, durationInSeconds) {
-    if (!this.connected) {
-      throw new Error('Not connected to Redis');
-    }
-
-    try {
-      const result = await this.setAsync(key, durationInSeconds, value);
-      console.log(`Key "${key}" set with value "${value}" and expiration ${durationInSeconds}s. Result: ${result}`);
-      return result;
-    } catch (error) {
-      console.error(`Error setting key "${key}": ${error}`);
-      throw error;
-    }
+  async set(key, value, duration) {
+    this.client.set(key, value);
+    this.client.expire(key, duration);
   }
 
   async del(key) {
-    if (!this.connected) {
-      throw new Error('Not connected to Redis');
-    }
-
-    try {
-      const result = await this.delAsync(key);
-      console.log(`Key "${key}" deleted. Result: ${result}`);
-      return result;
-    } catch (error) {
-      console.error(`Error deleting key "${key}": ${error}`);
-      throw error;
-    }
-  }
-
-  closeConnection() {
-    // Close the connection when needed
-    this.client.quit();
+    this.client.del(key);
   }
 }
 
-const redisClient = new RedisClient({
-  host: 'localhost',
-  port: 6379,
-});
-
-module.exports = redisClient;
+const redisClient = new RedisClient();
+export default redisClient;

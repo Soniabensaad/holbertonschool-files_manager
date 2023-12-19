@@ -1,5 +1,4 @@
-// server.js
-import router from './routes/index';
+import router from './index';
 
 const express = require('express');
 
