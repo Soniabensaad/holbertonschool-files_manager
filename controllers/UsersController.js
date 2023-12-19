@@ -2,7 +2,7 @@ import sha1 from 'sha1';
 import Queue from 'bull';
 import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
-import getIdAndKey from '../utils/users';
+import getIdAndKey from '../utils/users.js'; // Add the file extension
 
 const userQ = new Queue('userQ');
 
