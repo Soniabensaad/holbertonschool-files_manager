@@ -1,12 +1,13 @@
-import router from './index';
+import express from 'express';
+import controllerRouting from './routes/index';
 
-const express = require('express');
-
+const exPort = process.env.PORT || 5000;
 const app = express();
-const port = process.env.PORT || 5000;
 
-router(app);
+app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}`);
+controllerRouting(app);
+
+app.listen(exPort, () => {
+  console.log(`Server running on port ${exPort}`);
 });
