@@ -1,51 +1,39 @@
-import sha1 from 'sha1';
-import Queue from 'bull';
-import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
-import getIdAndKey from '../utils/users.js'; // Add the file extension
-
-const userQ = new Queue('userQ');
 
 class UsersController {
-  static async postNew(req, res) {
-    const { email, password } = req.body;
+    static async postNew(req, res) {
+        const { email, password } = req.body;
 
-    if (!email) return res.status(400).send({ error: 'Missing email' });
-    if (!password) return res.status(400).send({ error: 'Missing password' });
-    const emailExists = await dbClient.users.findOne({ email });
-    if (emailExists) return res.status(400).send({ error: 'Already exist' });
+        if (!email) {
+            return res.status(400).json({ error: 'Missing email' });
+        }
 
-    const secPass = sha1(password);
+        if (!password) {
+            return res.status(400).json({ error: 'Missing password' });
+        }
 
-    const insertStat = await dbClient.users.insertOne({
-      email,
-      password: secPass,
-    });
+        try {
+            // Check if the email already exists
+            const existingUser = await dbClient.collection('users').findOne({ email });
 
-    const createdUser = {
-      id: insertStat.insertedId,
-      email,
-    };
+            if (existingUser) {
+                return res.status(400).json({ error: 'Already exist' });
+            }
 
-    await userQ.add({
-      userId: insertStat.insertedId.toString(),
-    });
+            // Hash the password (You can use a library like bcrypt for this)
 
-    return res.status(201).send(createdUser);
-  }
+            // Save the new user to the database
+            const newUser = await dbClient.collection('users').insertOne({
+                email,
+                password: /* hashed password */,
+            });
 
-  static async getMe(req, res) {
-    const { userId } = await getIdAndKey(req);
-
-    const user = await dbClient.users.findOne({ _id: ObjectId(userId) });
-    if (!user) return res.status(401).send({ error: 'Unauthorized' });
-
-    const userInfo = { id: user._id, ...user };
-    delete userInfo._id;
-    delete userInfo.password;
-
-    return res.status(200).send(userInfo);
-  }
+            return res.status(201).json({ id: newUser.insertedId, email: newUser.ops[0].email });
+        } catch (error) {
+            console.error('Error creating user:', error);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
 }
 
 export default UsersController;
