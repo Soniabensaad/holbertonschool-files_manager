@@ -13,7 +13,6 @@ const userQueue = new Queue('userQueue');
 fileQueue.process(async (job) => {
   const { fileId, userId } = job.data;
 
-  // Delete bull keys in redis
 
   if (!userId) {
     console.log('Missing userId');
@@ -51,7 +50,6 @@ fileQueue.process(async (job) => {
 
 userQueue.process(async (job) => {
   const { userId } = job.data;
-  // Delete bull keys in redis
 
   if (!userId) {
     console.log('Missing userId');
