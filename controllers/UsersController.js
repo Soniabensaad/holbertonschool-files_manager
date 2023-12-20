@@ -1,5 +1,5 @@
 import dbClient from '../utils/db';
-import sha1 from 'sha1';
+import bcrypt from 'bcrypt';
 
 class UsersController {
     static async postNew(req, res) {
@@ -18,11 +18,11 @@ class UsersController {
             const existingUser = await dbClient.collection('users').findOne({ email });
 
             if (existingUser) {
-                return res.status(400).json({ error: 'Already exist' });
+                return res.status(400).json({ error: 'Already exists' });
             }
 
-            // Hash the password (Using SHA1 for demonstration, consider using a stronger hashing algorithm like bcrypt)
-            const hashedPassword = sha1(password);
+            // Hash the password using bcrypt
+            const hashedPassword = await bcrypt.hash(password, 10); // Adjust the salt rounds as needed
 
             // Save the new user to the database
             const newUser = await dbClient.collection('users').insertOne({
